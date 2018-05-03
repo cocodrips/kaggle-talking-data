@@ -1,5 +1,8 @@
 data/*
 my-data/*
+recipe/*
+result/*
+
 ### https://raw.github.com/github/gitignore/766e2a1f6276219fed1f18f11508261adbcb8257/Python.gitignore
 
 # Byte-compiled / optimized / DLL files
@@ -171,7 +174,8 @@ fabric.properties
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
+
 
 # Thumbnails
 ._*
