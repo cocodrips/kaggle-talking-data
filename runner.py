@@ -36,6 +36,7 @@ def main():
     script = __import__(config.script)
     score, running_time = script.run()
     teardown(score, running_time)
+    print("Finish", config.name)
 
 
 if __name__ == '__main__':
