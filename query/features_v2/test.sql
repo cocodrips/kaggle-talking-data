@@ -1,0 +1,32 @@
+SELECT
+  click_id,
+  app,
+  ip,
+  device,
+  os,
+  channel,
+  hour,
+  day,
+  hour_cos,
+  hour_sin,
+  next_1_ip_device_os_click,
+  next_1_ip_app_device_os_click,
+  next_1_ip_app_device_os_channel_click,
+  prev_1_ip_channel_click,
+  prev_1_ip_os_click,
+  count_ip_day_hour,
+  count_ip_app,
+  count_ip_app_os,
+  app_by_ip,
+  app_by_ip_device_ps,
+  channel_by_app,
+  channel_by_ip,
+  device_by_ip,
+  hour_by_ip_day,
+  os_by_ip_app,
+  cumcount_by_ip,
+  cumcount_by_ip_device_os
+FROM
+  `features_v2.features`
+WHERE
+  is_train=0
