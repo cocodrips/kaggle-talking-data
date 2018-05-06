@@ -1,15 +1,13 @@
 import gc
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 import pathlib
 import pickle
 import time
-import numpy as np
 import warnings
-import sys
-import xgboost as xgb
 from sklearn.model_selection import train_test_split
-from xgboost import plot_importance
+import lightgbm as lgb
 import config
 
 warnings.filterwarnings('ignore')
@@ -42,34 +40,60 @@ def run():
     gc.collect()
 
     '''Features'''
-
     X = train[:]
-    y = train['is_attributed']
     X.drop(config.y_keys, axis=1, inplace=True)
+    y = train['is_attributed']
     (X_train, X_test,
-     y_train, y_test) = train_test_split(X, y, test_size=0.1,
+     y_train, y_test) = train_test_split(X, y,
+                                         test_size=0.1,
                                          random_state=config.random_state)
-    dtrain = xgb.DMatrix(X_train, y_train)
-    dvalid = xgb.DMatrix(X_test, y_test)
     del train
     gc.collect()
 
-    '''valid'''
 
-    watchlist = [(dtrain, 'train'), (dvalid, 'valid')]
-    model = xgb.train(config.params, dtrain, 200, watchlist, maximize=True,
-                      early_stopping_rounds=config.early_stopping_rounds,
-                      verbose_eval=5)
+    xgtrain = lgb.Dataset(X_train, label=y_train,
+                          categorical_feature=config.categorical_features
+                          )
 
-    plot_importance(model)
+    xgtrain_small = lgb.Dataset(X_train[:100000], label=y_train[:100000],
+                                categorical_feature=config.categorical_features
+                                )
+    xgvalid = lgb.Dataset(X_test, label=y_test,
+                          categorical_feature=config.categorical_features
+                          )
+    del X_train, X_test, y_train, y_test
+    gc.collect()
+
+    evals_results = {}
+
+    bst1 = lgb.train(config.params,
+                     xgtrain,
+                     valid_sets=[xgtrain_small, xgvalid],
+                     valid_names=['train_small', 'valid'],
+                     evals_result=evals_results,
+                     num_boost_round=config.n_boost_round,
+                     early_stopping_rounds=config.early_stopping_rounds,
+                     verbose_eval=5)
+
+    print("\nModel Report")
+    print("bst1.best_iteration: ", bst1.best_iteration)
+    print("auc:",
+          evals_results['valid']['auc'][bst1.best_iteration - 1])
+
+    bst, best_iteration = (bst1, bst1.best_iteration)
+    print('{}sec: model training time'.format(int(time.time() - start_time)))
+
+    del xgtrain, xgvalid
+
+    lgb.plot_importance(bst, max_num_features=300)
     plt.tight_layout()
     plt.savefig(f"{config.result_path}/importance.png")
 
-    del dtrain, dvalid
     gc.collect()
 
+    # Test data
+
     if config.is_submit:
-        # Test data
         test = pd.DataFrame()
         for filepath in (my_data_path / f'test_{config.data_suffix}').glob(
             '*.tar.gz'):
@@ -81,16 +105,15 @@ def run():
         print("test data shape:", test.shape)
         click_id = test['click_id'].astype('int')
         test.drop(['click_id'], axis=1, inplace=True)
-        dtest = xgb.DMatrix(test)
+        is_attributed = bst.predict(test, num_iteration=best_iteration)
 
         del test
         gc.collect()
-    
+
         sub = pd.DataFrame(
             {
                 'click_id': click_id,
-                'is_attributed': model.predict(dtest,
-                                               ntree_limit=model.best_ntree_limit)
+                'is_attributed': is_attributed
             }
         )
 
@@ -100,7 +123,7 @@ def run():
 
     if config.save_model:
         with open(pathlib.Path(config.result_path) / 'model.pickle', 'wb') as f:
-            pickle.dump(model, f)
+            pickle.dump(bst, f)
 
     end_time = time.time()
-    return model.best_score, int(end_time - start_time)
+    return bst.best_score['valid']['auc'], int(end_time - start_time)

@@ -8,28 +8,12 @@ SELECT
   m.os,
   m.channel,
   m.click_time,
-  --  freq
-  app_count,
-  os_count,
-  device_count,
-  channel_count,
-  -- click time
-  next_1_ip_app_device_os_click,
-  next_2_ip_app_device_os_click,
-  prev_1_ip_app_device_os_click,
-  prev_2_ip_app_device_os_click,
-  next_1_ip_app_device_os_channel_click,
-  next_2_ip_app_device_os_channel_click,
-  prev_1_ip_app_device_os_channel_click,
-  prev_2_ip_app_device_os_channel_click,
-  next_1_ip_device_os_click,
-  next_2_ip_device_os_click,
-  prev_1_ip_device_os_click,
-  prev_2_ip_device_os_click,
-  clicks_ip_device_os_app,
-  clicks_ip_device_os,
-  clicks_ip_device_os_app_hour,
-  clicks_ip_device_os_channel,
+  -- clicks
+  next_1_ip_device_os_click, next_1_ip_app_device_os_click, next_1_ip_app_device_os_channel_click, prev_1_ip_channel_click, prev_1_ip_os_click,
+  -- count
+  count_ip_day_hour, count_ip_app, count_ip_app_os,
+  -- count unique
+  app_by_ip
   -- time
   EXTRACT(HOUR
   FROM
@@ -48,39 +32,12 @@ SELECT
   is_attributed
 FROM
   `kaggle_views.merged` m
-LEFT JOIN
-  `kaggle_views.app_count` c1
-ON
-  c1.app = m.app
-LEFT JOIN
-  `kaggle_views.os_count` c2
-ON
-  c2.os = m.os
-LEFT JOIN
-  `kaggle_views.device_count` c3
-ON
-  c3.device = m.device
-LEFT JOIN
-  `kaggle_views.channel_count` c4
-ON
-  c4.channel = m.channel
-LEFT JOIN
-  `kaggle_views.clicks_ip_device_is_app` click1
-ON
-  (click1.click_id = m.click_id
-    AND click1.is_train = m.is_train)
-LEFT JOIN
-  `kaggle_views.clicks_ip_device_os_app2` click2
-ON
-  (click2.click_id = m.click_id
-    AND click2.is_train = m.is_train)
-LEFT JOIN
-  `kaggle_views.clicks_ip_device_os_channel` click3
-ON
-  (click3.click_id = m.click_id
-    AND click3.is_train = m.is_train)
-LEFT JOIN
-  `kaggle_views.click_time_lag` timelag
-ON
-  (timelag.click_id = m.click_id
-    AND timelag.is_train = m.is_train)
+LEFT JOIN `features_v2.clicks` clicks ON (clicks.click_id = m.click_id AND clicks.click_id = m.is_train)
+LEFT JOIN `features_v2.count` c ON (c.click_id = m.click_id AND c.click_id = m.is_train)
+LEFT JOIN `features_v2.count_app_by_ip` count_app_by_ip ON (count_app_by_ip.app = m.app)
+LEFT JOIN `features_v2.count_app_by_ip_device_os` count_app_by_ip_device_os ON (count_app_by_ip_device_os.app = m.app)
+LEFT JOIN `features_v2.count_channel_by_app` count_channel_by_app ON (count_channel_by_app.channel = m.channel)
+
+LEFT JOIN `features_v2.count_channel_by_ip` count_channel_by_ip ON (count_channel_by_app.ip = m.ip)
+LEFT JOIN `features_v2.count_channel_by_app` count_channel_by_app ON (count_channel_by_app.channel = m.channel)
+LEFT JOIN `features_v2.count_channel_by_app` count_channel_by_app ON (count_channel_by_app.channel = m.channel)
