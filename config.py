@@ -1,11 +1,14 @@
-name = "lightgbm-features-v2-select-6-0.50"
+# name = "lightgbm-features-v2-select-6-0.50"
+name = "blend-1"
+
 is_submit = True
 save_model = True
 submit_score = ""
 training_rate = 0.50
 
-script = "004-LightGBM"
+# script = "004-LightGBM"
 # script = "003-BasicXgBoost"
+script = "006-Blend"
 data_suffix = "feature_v2"
 result_path = f"result/{name}"
 recipe = f"recipe/{name}"
